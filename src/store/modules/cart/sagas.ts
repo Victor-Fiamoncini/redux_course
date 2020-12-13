@@ -1,9 +1,13 @@
-import produce from 'immer'
-import { all, select, takeLatest } from 'redux-saga/effects'
+import { all, call, put, select, takeLatest } from 'redux-saga/effects'
 
 import { IState } from '../..'
+import { mainApi } from '../../../services/apiClients'
 
-import { addProductToCartRequest } from './actions'
+import {
+	addProductToCartFailure,
+	addProductToCartRequest,
+	addProductToCartSuccess,
+} from './actions'
 
 type CheckProductStockRequest = ReturnType<typeof addProductToCartRequest>
 
@@ -17,7 +21,13 @@ function* checkProductStock({ payload }: CheckProductStockRequest) {
 		)
 	})
 
-	console.log(currentQuantity)
+	const availableStockResponse = yield call(mainApi.get, `stock/${product.id}`)
+
+	if (availableStockResponse.data.quantity > currentQuantity) {
+		yield put(addProductToCartSuccess(product))
+	} else {
+		yield put(addProductToCartFailure(product.id))
+	}
 }
 
 export default all([
